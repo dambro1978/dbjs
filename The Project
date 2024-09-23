@@ -1,0 +1,37 @@
+Overview
+This tool allows you to generate PowerShell code for creating a simple API server that interacts with a SQL database. You can define multiple API routes, specify SQL queries with placeholders, and test your APIs directly from the interface.
+
+How to Use
+Database Configuration:
+
+Database Server: Enter the name of your database server.
+Database Name: Specify the name of your database.
+User (optional): If applicable, enter your database username.
+Password (optional): If applicable, enter your database password.
+If you leave the username and password fields blank, Windows Authentication will be used.
+Define API Routes:
+
+Click on the "Add Route" button to create a new route.
+For each route, fill in the following details:
+API Route: Specify the route path (e.g., /getUser).
+Port: Enter the port number (e.g., 8080) that the API will listen on.
+Static SQL Query: Write your SQL query with placeholders (e.g., SELECT * FROM users WHERE name = @placeHolder1 AND age = @placeHolder2).
+Generate PowerShell Code:
+
+Once you've added all the desired routes, click the "Generate PowerShell Code" button.
+The generated PowerShell code will appear in the text area below.
+You can download the generated code by clicking the "Download PowerShell Code" link.
+Test Your API:
+
+In the "Test API" section, enter the API URL you want to test (e.g., http://localhost:8080/getUser).
+Select the HTTP method you wish to use (GET or POST).
+For GET requests, enter parameters in the format key=value (e.g., name=John&age=30).
+For POST requests, use the same format in the parameter input.
+Click the "Test API" button to send the request.
+The API response will be displayed in the text area below the button.
+Important Notes
+Ensure that your SQL queries are valid and that the database server is accessible.
+The API server listens on the specified port, so make sure it's available and not blocked by firewalls.
+Troubleshooting
+If you encounter errors while executing queries, check the database connection settings and query syntax.
+Review the console output in PowerShell for detailed error messages.
