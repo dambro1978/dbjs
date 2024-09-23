@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PowerShell Code Generator with Multiple API Routes and API Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+        }
+        textarea {
+            width: 100%;
+            height: 300px;
+            font-family: monospace;
+            margin-top: 10px;
+        }
+        button, a {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover, a:hover {
+            background-color: #45a049;
+        }
+        .route-section {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-top: 20px;
+        }
+        .route-section label {
+            font-weight: bold;
+        }
+        .test-section {
+            margin-top: 30px;
+            padding: 10px;
+            border: 1px solid #007BFF;
+        }
+        .test-section h3 {
+            color: #007BFF;
+        }
+    </style>
+</head>
+<body>
+
+<h1>PowerShell Code Generator with Query Parameters for WHERE Clause and API Test</h1>
+
+<!-- Database Access Form -->
+<form id="dbConfigForm">
+    <label for="dbServer">Database Server:</label>
+    <input type="text" id="dbServer" placeholder="Enter server name" required>
+
+    <label for="dbName">Database Name:</label>
+    <input type="text" id="dbName" placeholder="Enter database name" required>
+
+    <label for="dbUser">User (optional):</label>
+    <input type="text" id="dbUser" placeholder="Enter username">
+
+    <label for="dbPassword">Password (optional):</label>
+    <input type="password" id="dbPassword" placeholder="Enter password">
+
+    <div id="routesContainer">
+        <div class="route-section">
+            <label for="routePath0">API Route:</label>
+            <input type="text" id="routePath0" placeholder="Enter the route path (e.g. /getUser)" required>
+
+            <label for="port0">Port:</label>
+            <input type="text" id="port0" placeholder="Enter the port (e.g. 8080)" required>
+
+            <label for="staticQuery0">Static SQL Query:</label>
+            <input type="text" id="staticQuery0" placeholder="Enter the SQL query (e.g. SELECT * FROM users WHERE name = @placeHolder1 AND age = @placeHolder2)" required>
+        </div>
+    </div>
+
+    <button id="addRouteBtn">Add Route</button>
+    <button id="generateBtn">Generate PowerShell Code</button>
+</form>
+
+<textarea id="powershellCode" readonly></textarea>
+
+<a id="downloadLink" style="display: none;">Download PowerShell Code</a>
+
+<!-- Section for Testing APIs -->
+<div id="apiTestContainer">
+    <div class="test-section">
+        <h3>Test API</h3>
+        <label for="apiUrl">API URL:</label>
+        <input type="text" id="apiUrl" placeholder="Enter the API URL (e.g. http://localhost:8080/getUser)">
+
+        <label for="apiMethod">Method:</label>
+        <select id="apiMethod">
+            <option value="GET">GET</option>
+            <option value="POST">POST</option>
+        </select>
+
+        <label for="apiParam">Parameter:</label>
+        <input type="text" id="apiParam" placeholder="Enter parameters (e.g. name=John&age=30)">
+
+        <button id="testApiBtn">Test API</button>
+
+        <h4>API Response:</h4>
+        <textarea id="apiResponse" readonly></textarea>
+    </div>
+</div>
+
+<script>
+    let routeCount = 1;  // Counter for the number of added routes
+
+    // Function to initialize the application
+    function init() {
+        document.getElementById('addRouteBtn').addEventListener('click', addRoute);
+        document.getElementById('generateBtn').addEventListener('click', generatePowerShellCode);
+        document.getElementById('testApiBtn').addEventListener('click', testAPI);
+    }
+
+    // Function to add a new API route section
+    function addRoute(event) {
+        event.preventDefault();
+
+        // Create a new route section
+        const newRoute = document.createElement('div');
+        newRoute.className = 'route-section';
+        newRoute.innerHTML = `
+            <label for="routePath${routeCount}">API Route:</label>
+            <input type="text" id="routePath${routeCount}" placeholder="Enter the route path (e.g. /getBook)" required>
+
+            <label for="port${routeCount}">Port:</label>
+            <input type="text" id="port${routeCount}" placeholder="Enter the port (e.g. 9293)" required>
+
+            <label for="staticQuery${routeCount}">Static SQL Query:</label>
+            <input type="text" id="staticQuery${routeCount}" placeholder="Enter the SQL query (e.g. SELECT * FROM books WHERE title = @placeHolder1)" required>
+        `;
+
+        // Append the new route section to the container
+        document.getElementById('routesContainer').appendChild(newRoute);
+
+        routeCount++;  // Increment the route counter
+    }
+
+    // Function to generate the PowerShell code based on user input
+    function generatePowerShellCode(event) {
+        event.preventDefault();
+
+        // Retrieve database configuration values
+        const dbServer = document.getElementById("dbServer").value;
+        const dbName = document.getElementById("dbName").value;
+        const dbUser = document.getElementById("dbUser").value;
+        const dbPassword = document.getElementById("dbPassword").value;
+
+        let connectionString;
+
+        // Use Windows Authentication if username and password are not provided
+        if (dbUser === "" && dbPassword === "") {
+            connectionString = `Server=${dbServer};Database=${dbName};Integrated Security=True;`;
+        } else {
+            connectionString = `Server=${dbServer};Database=${dbName};User Id=${dbUser};Password=${dbPassword};`;
+        }
+
+        // Build PowerShell code with multiple routes
+        let code = `
+# PowerShell API with correct parameter substitution logic
+$routes = @{
+`;
+
+        // Loop through each route and append it to the PowerShell code
+        for (let i = 0; i < routeCount; i++) {
+            const routePath = document.getElementById(`routePath${i}`).value;
+            const port = document.getElementById(`port${i}`).value;
+            const staticQuery = document.getElementById(`staticQuery${i}`).value;
+
+            code += `    "${routePath}" = @{ Port = ${port}; Query = "${staticQuery}" }\n`;
+        }
+
+        code += `}
+# Database connection string
+$connectionString = "${connectionString}"
+
+# Start the listeners for each route
+foreach ($route in $routes.GetEnumerator()) {
+    $listener = New-Object System.Net.HttpListener
+    $listener.Prefixes.Add("http://localhost:$($route.Value.Port)$($route.Key)/")
+    $listener.Start()
+    
+    Write-Host "Listening on http://localhost:$($route.Value.Port)$($route.Key)/"
+
+    while ($listener.IsListening) {
+        $context = $listener.GetContext()
+        $request = $context.Request
+        $response = $context.Response
+
+        # Enable CORS
+        $response.Headers.Add("Access-Control-Allow-Origin", "*")
+        $response.Headers.Add("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        $response.Headers.Add("Access-Control-Allow-Headers", "Content-Type")
+
+        if ($request.HttpMethod -eq "OPTIONS") {
+            $response.StatusCode = 200
+            $response.Close()
+            continue
+        }
+
+        # Extract parameters from the request (either GET or POST)
+        $params = @{}
+       $params = @{}
+     if ($request.HttpMethod -eq "POST") {
+    $bodyStream = New-Object IO.StreamReader($request.InputStream)
+    $body = $bodyStream.ReadToEnd()
+
+    foreach ($param in $body -split '&') {
+        $keyValue = $param -split '='
+        if ($keyValue.Length -eq 2) {
+            $key = [System.Net.WebUtility]::UrlDecode($keyValue[0])
+            $value = [System.Net.WebUtility]::UrlDecode($keyValue[1])
+            $params[$key] = $value
+        }
+    }
+
+
+        } elseif ($request.HttpMethod -eq "GET") {
+            $queryParams = $request.QueryString
+            foreach ($key in $queryParams.Keys) {
+                $params[$key] = $queryParams[$key]
+            }
+        }
+
+
+        # Replace placeholders in the SQL query with corresponding parameter values
+        $querySQL = $route.Value.Query
+        $placeholderIndex = 1
+        foreach ($paramKey in $params.Keys) {
+            $paramValue = $params[$paramKey]
+            $placeholder = "@placeHolder$placeholderIndex"
+            $querySQL = $querySQL -replace [regex]::Escape($placeholder), [regex]::Escape($paramValue)
+            $placeholderIndex++
+        }
+
+        # Execute the query in the database
+        $connection = New-Object System.Data.SqlClient.SqlConnection "${connectionString}"
+        $command = $connection.CreateCommand()
+        $command.CommandText = $querySQL
+
+        try {
+            $connection.Open()
+            $adapter = New-Object System.Data.SqlClient.SqlDataAdapter $command
+            $dataTable = New-Object System.Data.DataTable
+            $adapter.Fill($dataTable)
+
+            if ($dataTable.Rows.Count -eq 0) {
+                $jsonResult = '{"message": "No records found"}'
+            } else {
+                $jsonResult = $dataTable | ConvertTo-Json
+            }
+
+            $response.StatusCode = 200
+            $buffer = [System.Text.Encoding]::UTF8.GetBytes($jsonResult)
+            $response.OutputStream.Write($buffer, 0, $buffer.Length)
+        } catch {
+            Write-Host "Error executing query: $($_.Exception.Message)"
+            $response.StatusCode = 500
+            $errorResponse = [System.Text.Encoding]::UTF8.GetBytes("{'error': '$($_.Exception.Message)'}")
+            $response.OutputStream.Write($errorResponse, 0, $errorResponse.Length)
+        } finally {
+            $connection.Close()
+            $response.Close()
+        }
+    }
+}
+`;
+
+        // Display the generated PowerShell code
+        document.getElementById("powershellCode").value = code;
+
+        // Create a downloadable link
+        const blob = new Blob([code], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+        const downloadLink = document.getElementById("downloadLink");
+        downloadLink.href = url;
+        downloadLink.download = "generatedPowerShell.ps1";
+        downloadLink.style.display = "block";
+        downloadLink.innerText = "Download PowerShell Code";
+    }
+
+    // Function to test the API
+    async function testAPI(event) {
+        event.preventDefault();
+
+        const apiUrl = document.getElementById("apiUrl").value;
+        const apiMethod = document.getElementById("apiMethod").value;
+        const apiParam = document.getElementById("apiParam").value;
+
+        let response;
+        try {
+            if (apiMethod === "GET") {
+                response = await fetch(`${apiUrl}?${apiParam}`);
+            } else {
+                response = await fetch(apiUrl, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded"
+                    },
+                    body: apiParam
+                });
+            }
+
+            const data = await response.json();
+            document.getElementById("apiResponse").value = JSON.stringify(data, null, 2);
+        } catch (error) {
+            document.getElementById("apiResponse").value = `Error: ${error.message}`;
+        }
+    }
+
+    // Initialize the application
+    init();
+	//Created by Giuseppe D'Ambrosio
+  //all rights reserved
+</script>
+
+</body>
+</html>
